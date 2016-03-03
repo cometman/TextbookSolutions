@@ -47,6 +47,19 @@ def fetch_sections(course)
   end  
 end
 
+# Fetch material for given section.  Retry 3 times if there is a failure.  Abort script after 3rd.
+def fetch_material_information(section)
+  begin
+    retries ||= 0
+    JSON.parse(RestClient.get "#{@tstate_base}/books", {:params => { :id => section}})
+  rescue => e
+    puts "Fetch section materials critical error! #{e.message}....Retrying..."
+    sleep(5)
+    retry if (retries += 1) < 3
+    abort
+  end  
+end
+
 # Update config file with latest available departments. Return most recent departments
 def update_term_return_department(term)
   departments = fetch_departments(term)
