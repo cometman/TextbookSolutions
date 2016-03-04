@@ -1,6 +1,8 @@
 #Textbook Solutions public data collection
+###Requirements
+Windows system
 
-##Instructions
+###Instructions
 March 4, 2016
 
 1.  Double click run_me.exe
@@ -8,7 +10,7 @@ March 4, 2016
 3.  After completion, a CSV will be generated in THIS directory
 4.  The name of the file will be in the following format: [Semester ID]_[Time stamp].CSV E.g.  185_1457129624.CSV
 
-##Development
+###Development
 Application created into windows executable with OCRA.  https://github.com/larsch/ocra
 
 Command used: ocra .\main.rb --gemfile Gemfile --no-dep-run --add-all-core --gem-full
