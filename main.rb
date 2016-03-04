@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'bundler'
 require 'yaml'
+require 'csv'
 Bundler.require(:default)
 
 
@@ -9,12 +10,13 @@ Bundler.require(:default)
 @config = YAML.load_file('config.yml')
 
 # Create the CSV file
-file_name = "#{@config["term"]}_#{@Time.now.to_i}.csv"
-File.new(file_name)
+file_name = "#{@config["term"]}_#{Time.now.to_i}.csv"
+File.open("Outputs/#{file_name}", "w") {}
 
+# Write the headers to the CSV
 CSV.open("Outputs/#{file_name}", "a+") do |csv|
-          csv << ["isbn", "dept", "course", "section", "prof", "enrollment", "books required"]
-        end
+  csv << ["isbn", "dept", "course", "section", "prof", "enrollment", "books required", "paper adoption", "required", "new sell", "used sell", "new rental", "used rental"]
+end
 
 # Retrieve departments for the given term.  Retry 3 times if there is a failure. Abort script after 3rd.
 def fetch_departments(term)
@@ -127,7 +129,7 @@ all_departments.each do |department|
         return_hash[department["name"]][course["name"]][section["name"]]["material"].push(
           {
             "isbn" => material["isbn"],
-            "no_book_required" => material["citation"].downcase().include?("no text required") ? "Y" : "N",
+            "book_required" => material["citation"].downcase().include?("no text required") ? "N" : "Y",
             "enrollement" => nil,
             "paper_adoption" => "N",
             "required" => required,
@@ -151,17 +153,16 @@ all_departments.each do |department|
               course["name"],
               section["name"],
               section["instructor"],
-              "enrollement" => nil,
-              "no_book_required" => material["citation"].downcase().include?("no text required") ? "Y" : "N",
-              "paper_adoption" => "N",
-              "required" => required,
-              "new sell" => material["offers"].find{|x| x["condition"] == "new" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "new" }["price"],
-              "used sell" => material["offers"].find{|x| x["condition"] == "used" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "used" }["price"],
-              "new rental" => material["offers"].find{|x| x["condition"] == "new_rental" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "new_rental" }["price"],
-              "used rental" => material["offers"].find{|x| x["condition"] == "used_rental" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "used_rental" }["price"]
+              nil,
+              material["citation"].downcase().include?("no text required") ? "Y" : "N",
+              "N",
+              required,
+              material["offers"].find{|x| x["condition"] == "new" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "new" }["price"],
+              material["offers"].find{|x| x["condition"] == "used" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "used" }["price"],
+              material["offers"].find{|x| x["condition"] == "new_rental" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "new_rental" }["price"],
+              material["offers"].find{|x| x["condition"] == "used_rental" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "used_rental" }["price"]
           ]
         end
-        byebug
       end
     end
   end
