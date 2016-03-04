@@ -11,10 +11,10 @@ Bundler.require(:default)
 
 # Create the CSV file
 file_name = "#{@config["term"]}_#{Time.now.to_i}.csv"
-File.open("Outputs/#{file_name}", "w") {}
+File.open(file_name, "w") {}
 
 # Write the headers to the CSV
-CSV.open("Outputs/#{file_name}", "a+") do |csv|
+CSV.open(file_name, "a+") do |csv|
   csv << ["isbn", "dept", "course", "section", "prof", "enrollment", "books required", "paper adoption", "required", "new sell", "used sell", "new rental", "used rental"]
 end
 
@@ -146,7 +146,7 @@ all_departments.each do |department|
         end
 
         # Write each ISBN (even if duplicate) to CSV
-        CSV.open("Outputs/#{file_name}", "a+") do |csv|
+        CSV.open(file_name, "a+") do |csv|
           csv << [
               material["isbn"],
               department["name"],
