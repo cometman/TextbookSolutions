@@ -1,3 +1,4 @@
+$:.unshift File.dirname($0)
 require 'rubygems'
 require 'bundler'
 require 'yaml'
