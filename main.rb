@@ -8,6 +8,14 @@ Bundler.require(:default)
 @tstate_base = "http://txstate.verbacompare.com/compare"
 @config = YAML.load_file('config.yml')
 
+# Create the CSV file
+file_name = "#{@config["term"]}_#{@Time.now.to_i}.csv"
+File.new(file_name)
+
+CSV.open("Outputs/#{file_name}", "a+") do |csv|
+          csv << ["isbn", "dept", "course", "section", "prof", "enrollment", "books required"]
+        end
+
 # Retrieve departments for the given term.  Retry 3 times if there is a failure. Abort script after 3rd.
 def fetch_departments(term)
   begin
@@ -101,7 +109,7 @@ all_departments.each do |department|
 
       # Add material to each course
       return_hash[department["name"]][course["name"]][section["name"]]["material"] = []
-      all_material.each do |material|
+      all_material.each_with_index do |material, index|
 
         # Determine if book is required
         case material["required"].downcase
@@ -112,7 +120,7 @@ all_departments.each do |department|
         when "optional"
           required = "OP"
         else
-          required = ""
+          required = material["required"]
         end
 
         # Save all data to hash
@@ -122,14 +130,42 @@ all_departments.each do |department|
             "no_book_required" => material["citation"].downcase().include?("no text required") ? "Y" : "N",
             "enrollement" => nil,
             "paper_adoption" => "N",
-            "required" => required
+            "required" => required,
+            "title" => material["title"],
+            "author" => material["author"],
           }
         )
+        return_hash[department["name"]][course["name"]][section["name"]]["material"][-1].merge!("prices" => [])
+        material["offers"].each do |offer|
+          return_hash[department["name"]][course["name"]][section["name"]]["material"][-1]["prices"].push({
+            "price" => offer["price"],
+            "condition" => offer["condition"]
+          })
+        end
+
+        # Write each ISBN (even if duplicate) to CSV
+        CSV.open("Outputs/#{file_name}", "a+") do |csv|
+          csv << [
+              material["isbn"],
+              department["name"],
+              course["name"],
+              section["name"],
+              section["instructor"],
+              "enrollement" => nil,
+              "no_book_required" => material["citation"].downcase().include?("no text required") ? "Y" : "N",
+              "paper_adoption" => "N",
+              "required" => required,
+              "new sell" => material["offers"].find{|x| x["condition"] == "new" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "new" }["price"],
+              "used sell" => material["offers"].find{|x| x["condition"] == "used" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "used" }["price"],
+              "new rental" => material["offers"].find{|x| x["condition"] == "new_rental" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "new_rental" }["price"],
+              "used rental" => material["offers"].find{|x| x["condition"] == "used_rental" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "used_rental" }["price"]
+          ]
+        end
         byebug
       end
     end
   end
 end
-byebug
-puts return_hash
 
+# TODO
+# Make file for offers
