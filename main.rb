@@ -81,11 +81,13 @@ end
 
 # Execution
 all_departments = update_term_return_department(@config["term"])
+puts "Departments found - #{all_departments.count}"
 return_hash = {}
 # Add departments
 all_departments.each do |department|
   return_hash[department["name"]] = {}
   all_courses = fetch_courses(department["id"])
+  puts "Courses found in department [#{department["name"]}] - #{all_courses.count}"
 
   # Add courses to each department
   all_courses.each do |course|
@@ -95,6 +97,36 @@ all_departments.each do |department|
     # Add sections to each course
     all_sections.each do |section|
       return_hash[department["name"]][course["name"]][section["name"]] = {"instructor" => section["instructor"]}
+      all_material = fetch_material_information(section["id"])
+
+      # Add material to each course
+      return_hash[department["name"]][course["name"]][section["name"]]["material"] = []
+      all_material.each do |material|
+
+        # Determine if book is required
+        case material["required"].downcase
+        when "recommended"
+          required = "RC"
+        when "required"
+          required = "RQ"
+        when "optional"
+          required = "OP"
+        else
+          required = ""
+        end
+
+        # Save all data to hash
+        return_hash[department["name"]][course["name"]][section["name"]]["material"].push(
+          {
+            "isbn" => material["isbn"],
+            "no_book_required" => material["citation"].downcase().include?("no text required") ? "Y" : "N",
+            "enrollement" => nil,
+            "paper_adoption" => "N",
+            "required" => required
+          }
+        )
+        byebug
+      end
     end
   end
 end
