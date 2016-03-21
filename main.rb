@@ -10,10 +10,10 @@ Bundler.require(:default)
 @tstate_base = "http://txstate.verbacompare.com/compare"
 @config = YAML.load_file('config.yml')
 
-# Create the CSV file
+# Check if manual term or find automatically
+@manual_term = @config["manual_term"]
 file_name = "#{@config["term"]}_#{Time.now.to_i}.csv"
 File.open(file_name, "w") {}
-
 # Write the headers to the CSV
 CSV.open(file_name, "a+") do |csv|
   csv << ["isbn", "dept", "course", "section", "prof", "enrollment", "books required", "paper adoption", "required", "new sell", "used sell", "new rental", "used rental"]
@@ -74,6 +74,8 @@ end
 # Update config file with latest available departments. Return most recent departments
 def update_term_return_department(term)
   departments = fetch_departments(term)
+  # Return departments if we want a manual run
+  return departments if @manual_term == 1
   if departments.count > 0
     puts "Departments found, trying next term"
     sleep(1)
