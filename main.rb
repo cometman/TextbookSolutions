@@ -128,11 +128,15 @@ all_departments.each do |department|
           required = material["required"]
         end
 
+        citation = material["citation"]
+        if citation != nil
+          citation = citation.downcase().include?("no text required") ? "N" : "Y"
+        end
         # Save all data to hash
         return_hash[department["name"]][course["name"]][section["name"]]["material"].push(
           {
             "isbn" => material["isbn"],
-            "book_required" => material["citation"].downcase().include?("no text required") ? "N" : "Y",
+            "book_required" => citation,
             "enrollement" => nil,
             "paper_adoption" => "N",
             "required" => required,
