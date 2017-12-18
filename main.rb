@@ -154,21 +154,33 @@ all_departments.each do |department|
 
         # Write each ISBN (even if duplicate) to CSV
         CSV.open(file_name, "a+") do |csv|
-          csv << [
-              material["isbn"],
-              department["name"],
-              course["name"],
-              section["name"],
-              section["instructor"],
-              nil,
-              material["citation"].downcase().include?("no text required") ? "Y" : "N",
-              "N",
-              required,
-              material["offers"].find{|x| x["condition"] == "new" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "new" }["price"],
-              material["offers"].find{|x| x["condition"] == "used" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "used" }["price"],
-              material["offers"].find{|x| x["condition"] == "new_rental" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "new_rental" }["price"],
-              material["offers"].find{|x| x["condition"] == "used_rental" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "used_rental" }["price"]
-          ]
+          begin
+            citation = ''
+            if material["citation"] != nil
+              citation = material["citation"].downcase().include?("no text required") ? "Y" : "N"
+            end
+            offers = material["offers"]
+            if offers == nil
+              offers = {}
+            end
+            csv << [
+                material["isbn"],
+                department["name"],
+                course["name"],
+                section["name"],
+                section["instructor"],
+                nil,
+                citation,
+                "N",
+                required,
+                offers.find{|x| x["condition"] == "new" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "new" }["price"],
+                offers.find{|x| x["condition"] == "used" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "used" }["price"],
+                offers.find{|x| x["condition"] == "new_rental" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "new_rental" }["price"],
+                offers.find{|x| x["condition"] == "used_rental" }.nil? ? "" : material["offers"].find{|x| x["condition"] == "used_rental" }["price"]
+            ]
+          rescue => e
+            csv <<  [ material["isbn"], "ERROR THE APPLICATION CRASHED", "Details: #{e.message}"]
+          end
         end
       end
     end
