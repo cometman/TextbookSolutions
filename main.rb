@@ -23,7 +23,8 @@ end
 def fetch_departments(term)
   begin
     retries ||= 0
-    JSON.parse(RestClient.get "#{@tstate_base}/departments", {:params => { :term => term}})
+    result = JSON.parse(RestClient.get "#{@tstate_base}/departments", {:params => { :term => term}})
+    return result
   rescue => e
     puts "Fetch department critical error! #{e.message}....Retrying..."
     sleep(5)
@@ -33,10 +34,11 @@ def fetch_departments(term)
 end
 
 # Fetch courses for particular department.  Retry 3 times if there is a failure. Abort script after 3rd.
-def fetch_courses(department)
+def fetch_courses(department, term)
   begin
     retries ||= 0
-    JSON.parse(RestClient.get "#{@tstate_base}/courses", {:params => { :id => department, :term_id => @config["term"]}})
+    result = JSON.parse(RestClient.get "#{@tstate_base}/courses", {:params => { :id => department, :term_id => term}})
+    return result
   rescue => e
     puts "Fetch course critical error! #{e.message}....Retrying..."
     sleep(5)
@@ -46,10 +48,10 @@ def fetch_courses(department)
 end
 
 # Fetch sections for particular course.  Retry 3 times if there is a failure. Abort script after 3rd.
-def fetch_sections(course)
+def fetch_sections(course, term)
   begin
     retries ||= 0
-    JSON.parse(RestClient.get "#{@tstate_base}/sections", {:params => { :id => course, :term_id => @config["term"]}})
+    JSON.parse(RestClient.get "#{@tstate_base}/sections", {:params => { :id => course, :term_id => term}})
   rescue => e
     puts "Fetch section critical error! #{e.message}....Retrying..."
     sleep(5)
@@ -75,7 +77,7 @@ end
 def update_term_return_department(term)
   departments = fetch_departments(term)
   # Return departments if we want a manual run
-  return departments if @manual_term == 1
+  return departments if @config['manual_term']
   if departments.count > 0
     puts "Departments found, trying next term"
     sleep(1)
@@ -93,19 +95,21 @@ def update_term_return_department(term)
 end
 
 # Execution
-all_departments = update_term_return_department(@config["term"])
+# Always prioritize manual term....
+term = @config["manual_term"] || @config["term"]
+all_departments = update_term_return_department(term)
 puts "Departments found - #{all_departments.count}"
 return_hash = {}
 # Add departments
 all_departments.each do |department|
   return_hash[department["name"]] = {}
-  all_courses = fetch_courses(department["id"])
+  all_courses = fetch_courses(department["id"], term)
   puts "Courses found in department [#{department["name"]}] - #{all_courses.count}"
 
   # Add courses to each department
   all_courses.each do |course|
     return_hash[department["name"]][course["name"]] = {}
-    all_sections = fetch_sections(course["id"])
+    all_sections = fetch_sections(course["id"], term)
 
     # Add sections to each course
     all_sections.each do |section|
